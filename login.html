@@ -165,13 +165,30 @@
     </main>
 
     <script src="js/main.js"></script>
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Configuration Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5EtYinSkjAo4oc3h-zcRr-wFUvePfPek",
+            authDomain: "elite-25-98b74.firebaseapp.com",
+            projectId: "elite-25-98b74",
+            storageBucket: "elite-25-98b74.firebasestorage.app",
+            messagingSenderId: "889117115772",
+            appId: "1:889117115772:web:0eedd3cef42d40588b50f9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
         // INITIALISATION EMAILJS
         emailjs.init("XGL1mU4IcXaVA4S5r");
 
         let tempUser = null;
+        let generatedOTP = null;
 
-        function switchTab(type) {
+        window.switchTab = function (type) {
             const tabs = document.querySelectorAll('.tab-btn');
             const loginForm = document.getElementById('login-form');
             const regForm = document.getElementById('register-form');
@@ -193,29 +210,15 @@
             }
         }
 
-        let generatedOTP = null;
-
-        // Simule une base de données d'utilisateurs
-        function getUsers() {
-            const users = localStorage.getItem('elite25_accounts');
-            return users ? JSON.parse(users) : [];
-        }
-
-        function saveUser(user) {
-            const users = getUsers();
-            if (!users.find(u => u.email === user.email)) {
-                users.push(user);
-                localStorage.setItem('elite25_accounts', JSON.stringify(users));
-            }
-        }
-
-        function requestLoginCode() {
-            const email = document.getElementById('login-email').value;
+        window.requestLoginCode = async function () {
+            const email = document.getElementById('login-email').value.toLowerCase().trim();
             if (!email) return alert('Veuillez entrer votre email');
 
-            // Vérifier si le compte existe
-            const users = getUsers();
-            if (!users.find(u => u.email === email)) {
+            // VÉRIFICATION DANS FIRESTORE
+            const userRef = doc(db, "utilisateurs", email);
+            const userSnap = await getDoc(userRef);
+
+            if (!userSnap.exists()) {
                 return alert("Cette adresse n'est pas enregistrée. Crée un compte d'abord !");
             }
 
@@ -232,25 +235,31 @@
                 .then(() => {
                     document.getElementById('login-form').style.display = 'none';
                     document.getElementById('verify-code-form').style.display = 'block';
-                    alert("Un vrai code a été envoyé à " + email);
+                    alert("Un code a été envoyé à " + email);
                 }, (error) => {
-                    console.error("Erreur EmailJS détaillée:", error);
-                    alert("ERREUR EMAILJS : " + JSON.stringify(error));
+                    console.error("Erreur EmailJS:", error);
+                    alert("Erreur lors de l'envoi de l'email.");
                 });
         }
 
-        function requestRegisterLink() {
-            const email = document.getElementById('reg-email').value;
+        window.requestRegisterLink = async function () {
+            const email = document.getElementById('reg-email').value.toLowerCase().trim();
             const name = document.getElementById('reg-name').value;
             if (!email || !name) return alert('Veuillez remplir tous les champs');
 
-            // Génération d'un code aussi pour l'inscription pour "confirmer" l'email
+            // VÉRIFIER SI DÉJÀ EXISTANT
+            const userSnap = await getDoc(doc(db, "utilisateurs", email));
+            if (userSnap.exists()) {
+                return alert("Cette adresse est déjà utilisée. Connecte-toi !");
+            }
+
             generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
 
             tempUser = {
                 email: email,
                 name: name,
-                isFirstOrder: true
+                isMember: true,
+                joinDate: new Date().toISOString()
             };
 
             const templateParams = {
@@ -265,12 +274,11 @@
                     document.getElementById('email-sent-msg').style.display = 'block';
                     alert("Un code de confirmation a été envoyé à " + email);
                 }, (error) => {
-                    console.error("Erreur EmailJS détaillée:", error);
-                    alert("ERREUR EMAILJS : " + JSON.stringify(error));
+                    console.error("Erreur EmailJS:", error);
                 });
         }
 
-        function handleAuth(type) {
+        window.handleAuth = async function (type) {
             const codeInputId = type === 'login' ? 'login-code' : 'reg-confirm-code';
             const code = document.getElementById(codeInputId).value;
 
@@ -279,14 +287,23 @@
             }
 
             if (type === 'login') {
-                const email = document.getElementById('login-email').value;
-                const users = getUsers();
-                const existingUser = users.find(u => u.email === email);
-                localStorage.setItem('elite25_user', JSON.stringify(existingUser));
+                const email = document.getElementById('login-email').value.toLowerCase().trim();
+                const userSnap = await getDoc(doc(db, "utilisateurs", email));
+                const userData = userSnap.data();
+                localStorage.setItem('elite25_user', JSON.stringify(userData));
             } else {
-                saveUser(tempUser);
-                localStorage.setItem('elite25_user', JSON.stringify(tempUser));
-                alert('Email confirmé ! Ton compte est activé.');
+                // SAUVEGARDE DANS FIRESTORE
+                try {
+                    await setDoc(doc(db, "utilisateurs", tempUser.email), {
+                        ...tempUser,
+                        createdAt: serverTimestamp()
+                    });
+                    localStorage.setItem('elite25_user', JSON.stringify(tempUser));
+                    alert('Bienvenue dans l\'élite ! Ton compte est créé.');
+                } catch (e) {
+                    console.error("Erreur Firestore :", e);
+                    return alert("Erreur lors de la création du compte.");
+                }
             }
 
             const fromCheckout = new URLSearchParams(window.location.search).get('flow') === 'checkout';
