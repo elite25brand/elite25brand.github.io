@@ -4,6 +4,33 @@ const cartList = document.getElementById('cart-list');
 const totalPriceElement = document.getElementById('total-price');
 const sideCart = document.getElementById('side-cart');
 
+// --- DROP COUNTDOWN LOGIC ---
+const DROP_DATE = new Date("2026-02-28T15:30:00").getTime();
+
+function updateCountdown() {
+    const announcementBar = document.querySelector('.announcement-bar');
+    if (!announcementBar) return;
+
+    const now = new Date().getTime();
+    const distance = DROP_DATE - now;
+
+    if (distance > 0) {
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        announcementBar.innerHTML = `PROCHAIN DROP DANS : ${hours}h ${minutes}m ${seconds}s • COMMANDE DISPONIBLE À 15H30`;
+        announcementBar.style.backgroundColor = "#cc0000"; // Rouge pour attirer l'attention
+    } else {
+        // Drop is live
+        if (!announcementBar.getAttribute('data-updated')) {
+            announcementBar.innerHTML = "BIENVENUE CHEZ [élite 25] • -5€ SUR TA PREMIÈRE COMMANDE, N'ATTENDS PLUS • BUILT DIFFERENT";
+            announcementBar.style.backgroundColor = "var(--accent-color)";
+            announcementBar.setAttribute('data-updated', 'true');
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // FAQ Accordion
     const faqQuestions = document.querySelectorAll('.faq-question');
@@ -15,6 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
             answer.style.display = isOpen ? 'none' : 'block';
         });
     });
+
+    // Start countdown timer
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
 
     // Thumbnail Gallery Logic
     const thumbs = document.querySelectorAll('.thumb');
@@ -40,8 +71,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load User Session
     const savedUser = localStorage.getItem('elite25_user');
+    let showOffer = true;
+
     if (savedUser) {
         const user = JSON.parse(savedUser);
+        showOffer = user.isFirstOrder;
         const headerIcons = document.querySelector('.header-icons');
         if (headerIcons) {
             const profileLink = headerIcons.querySelector('a[href="login.html"]');
@@ -69,6 +103,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
             }
         }
+    }
+
+    if (showOffer) {
+        document.querySelectorAll('.first-order-badge').forEach(badge => {
+            badge.style.display = 'block';
+        });
     }
 
     // Load cart from localStorage if exists
@@ -99,6 +139,16 @@ window.toggleCart = () => {
 };
 
 window.goToCheckout = () => {
+    // BLOCK CHECKOUT IF DROP NOT STARTED
+    const now = new Date().getTime();
+    if (now < DROP_DATE) {
+        const timeLeft = DROP_DATE - now;
+        const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        alert(`Le drop n'est pas encore lancé ! Revenez demain à 15h30 pour commander.\nTemps restant : ${hours}h et ${minutes}min.`);
+        return;
+    }
+
     if (cart.length === 0) {
         alert('Votre panier est vide !');
         return;
