@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CONNEXION | [élite 25]</title>
+    <link rel="icon" type="image/png" href="assets/images/favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <style>
+        .login-container {
+            max-width: 450px;
+            margin: 80px auto;
+            background: rgba(17, 17, 17, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .login-title {
+            font-family: var(--font-display);
+            font-size: 38px;
+            text-align: center;
+            margin-bottom: 30px;
+            letter-spacing: -1px;
+        }
+
+        .login-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 40px;
+            background: #0a0a0a;
+            padding: 5px;
+            border-radius: 12px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #555;
+            padding: 12px;
+            cursor: pointer;
+            font-family: var(--font-display);
+            font-size: 14px;
+            letter-spacing: 1px;
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            flex: 1;
+            border-radius: 8px;
+        }
+
+        .tab-btn.active {
+            color: white;
+            background: #1a1a1a;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .login-footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #444;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .login-footer a {
+            color: white;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header-main">
+        <div class="header-top">
+            <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <a href="index.html">
+                <img src="assets/images/elite_logo.png" alt="[élite 25] Logo" class="header-logo">
+            </a>
+            <nav class="nav-main">
+                <a href="catalogue.html" class="nav-link">CATALOGUE</a>
+            </nav>
+            <div class="header-icons">
+                <span class="cart-count">0</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="content-wrapper">
+        <div class="login-container">
+            <div class="login-tabs">
+                <button class="tab-btn active" onclick="switchTab('login')">CONNEXION</button>
+                <button class="tab-btn" onclick="switchTab('register')">S'INSCRIRE</button>
+            </div>
+
+            <div id="login-form">
+                <h1 class="login-title">BON RETOUR</h1>
+                <div class="form-group">
+                    <label>EMAIL</label>
+                    <input type="email" class="form-input" id="login-email" placeholder="ton@email.com">
+                </div>
+                <button class="btn-pill btn-primary" style="width: 100%; margin-top: 20px;"
+                    onclick="requestLoginCode()">RECEVOIR MON CODE</button>
+            </div>
+
+            <div id="verify-code-form" style="display: none;">
+                <h1 class="login-title">CODE DE VÉRIFICATION</h1>
+                <p style="text-align: center; color: #888; margin-bottom: 20px;">Un code à 6 chiffres a été envoyé à ton
+                    adresse.</p>
+                <div class="form-group">
+                    <label>CODE À 6 CHIFFRES</label>
+                    <input type="text" class="form-input" id="login-code" maxlength="6"
+                        style="letter-spacing: 10px; text-align: center; font-size: 24px;" placeholder="000000">
+                </div>
+                <button class="btn-pill btn-primary" style="width: 100%; margin-top: 20px;"
+                    onclick="handleAuth('login')">VÉRIFIER ET SE CONNECTER</button>
+                <p style="text-align: center; margin-top: 20px;"><a href="#" onclick="switchTab('login')"
+                        style="color: #666; font-size: 12px;">RETOUR</a></p>
+            </div>
+
+            <div id="register-form" style="display: none;">
+                <h1 class="login-title">REJOINDRE L'ÉLITE</h1>
+                <div class="form-group">
+                    <label>NOM COMPLET</label>
+                    <input type="text" class="form-input" id="reg-name">
+                </div>
+                <div class="form-group">
+                    <label>EMAIL</label>
+                    <input type="email" class="form-input" id="reg-email">
+                </div>
+                <div class="form-group">
+                    <label>MOT DE PASSE</label>
+                    <input type="password" class="form-input" id="reg-pass">
+                </div>
+                <button class="btn-pill btn-primary" style="width: 100%; margin-top: 20px;"
+                    onclick="requestRegisterLink()">S'INSCRIRE</button>
+            </div>
+
+            <div id="email-sent-msg" style="display: none; text-align: center;">
+                <h1 class="login-title">VÉRIFIE TES MAILS</h1>
+                <p style="color: #ccc; line-height: 1.6; margin-bottom: 30px;">
+                    Un code de confirmation a été envoyé. Saisis-le ci-dessous pour activer ton compte Élite et profiter
+                    de tes -5€.
+                </p>
+                <div class="form-group">
+                    <label>CODE DE CONFIRMATION</label>
+                    <input type="text" class="form-input" id="reg-confirm-code" maxlength="6"
+                        style="letter-spacing: 10px; text-align: center; font-size: 24px;" placeholder="000000">
+                </div>
+                <button class="btn-pill btn-primary" style="width: 100%; margin-top: 20px;"
+                    onclick="handleAuth('register')">CONFIRMER MON COMPTE</button>
+            </div>
+
+            <div class="login-footer">
+                <p>En continuant, tu acceptes nos conditions d'élite.</p>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/main.js"></script>
+    <script>
+        // INITIALISATION EMAILJS
+        emailjs.init("XGL1mU4IcXaVA4S5r");
+
+        let tempUser = null;
+
+        function switchTab(type) {
+            const tabs = document.querySelectorAll('.tab-btn');
+            const loginForm = document.getElementById('login-form');
+            const regForm = document.getElementById('register-form');
+            const verifyForm = document.getElementById('verify-code-form');
+            const emailMsg = document.getElementById('email-sent-msg');
+
+            tabs.forEach(t => t.classList.remove('active'));
+            verifyForm.style.display = 'none';
+            emailMsg.style.display = 'none';
+
+            if (type === 'login') {
+                tabs[0].classList.add('active');
+                loginForm.style.display = 'block';
+                regForm.style.display = 'none';
+            } else {
+                tabs[1].classList.add('active');
+                loginForm.style.display = 'none';
+                regForm.style.display = 'block';
+            }
+        }
+
+        let generatedOTP = null;
+
+        // Simule une base de données d'utilisateurs
+        function getUsers() {
+            const users = localStorage.getItem('elite25_accounts');
+            return users ? JSON.parse(users) : [];
+        }
+
+        function saveUser(user) {
+            const users = getUsers();
+            if (!users.find(u => u.email === user.email)) {
+                users.push(user);
+                localStorage.setItem('elite25_accounts', JSON.stringify(users));
+            }
+        }
+
+        function requestLoginCode() {
+            const email = document.getElementById('login-email').value;
+            if (!email) return alert('Veuillez entrer votre email');
+
+            // Vérifier si le compte existe
+            const users = getUsers();
+            if (!users.find(u => u.email === email)) {
+                return alert("Cette adresse n'est pas enregistrée. Crée un compte d'abord !");
+            }
+
+            // Génération d'un code à 6 chiffres
+            generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+
+            const templateParams = {
+                email: email,
+                password: generatedOTP,
+                time: new Date().toLocaleString()
+            };
+
+            emailjs.send("service_l1un9jp", "template_j5a433h", templateParams)
+                .then(() => {
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('verify-code-form').style.display = 'block';
+                    alert("Un vrai code a été envoyé à " + email);
+                }, (error) => {
+                    console.error("Erreur EmailJS détaillée:", error);
+                    alert("ERREUR EMAILJS : " + JSON.stringify(error));
+                });
+        }
+
+        function requestRegisterLink() {
+            const email = document.getElementById('reg-email').value;
+            const name = document.getElementById('reg-name').value;
+            if (!email || !name) return alert('Veuillez remplir tous les champs');
+
+            // Génération d'un code aussi pour l'inscription pour "confirmer" l'email
+            generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+
+            tempUser = {
+                email: email,
+                name: name,
+                isFirstOrder: true
+            };
+
+            const templateParams = {
+                email: email,
+                password: generatedOTP,
+                time: new Date().toLocaleString()
+            };
+
+            emailjs.send("service_l1un9jp", "template_j5a433h", templateParams)
+                .then(() => {
+                    document.getElementById('register-form').style.display = 'none';
+                    document.getElementById('email-sent-msg').style.display = 'block';
+                    alert("Un code de confirmation a été envoyé à " + email);
+                }, (error) => {
+                    console.error("Erreur EmailJS détaillée:", error);
+                    alert("ERREUR EMAILJS : " + JSON.stringify(error));
+                });
+        }
+
+        function handleAuth(type) {
+            const codeInputId = type === 'login' ? 'login-code' : 'reg-confirm-code';
+            const code = document.getElementById(codeInputId).value;
+
+            if (code !== generatedOTP) {
+                return alert('Code incorrect');
+            }
+
+            if (type === 'login') {
+                const email = document.getElementById('login-email').value;
+                const users = getUsers();
+                const existingUser = users.find(u => u.email === email);
+                localStorage.setItem('elite25_user', JSON.stringify(existingUser));
+            } else {
+                saveUser(tempUser);
+                localStorage.setItem('elite25_user', JSON.stringify(tempUser));
+                alert('Email confirmé ! Ton compte est activé.');
+            }
+
+            const fromCheckout = new URLSearchParams(window.location.search).get('flow') === 'checkout';
+            window.location.href = fromCheckout ? 'paiement.html' : 'catalogue.html';
+        }
+    </script>
+</body>
+
+</html>
