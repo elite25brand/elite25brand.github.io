@@ -284,6 +284,11 @@
                         <span>LIVRAISON</span>
                         <span id="shipping-fee">À calculer</span>
                     </div>
+                    <div id="discount-row" class="summary-item"
+                        style="font-size: 16px; color: #4CAF50; font-family: var(--font-body); display: none;">
+                        <span>OFFRE BIENVENUE</span>
+                        <span>-5.00€</span>
+                    </div>
                     <div class="summary-item">
                         <span>TOTAL</span>
                         <span id="final-total">0.00€</span>
@@ -300,7 +305,7 @@
     <!-- Firebase SDK (Version modulaire via CDN) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // Ta configuration Firebase
         const firebaseConfig = {
@@ -316,6 +321,11 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // Exposer db pour le script principal
+        window.db = db;
+        window.getDoc = getDoc;
+        window.doc = doc;
+
         // Rendre la fonction accessible globalement
         window.saveOrderToFirebase = async function (paymentId) {
             const savedCart = localStorage.getItem('elite25_cart');
@@ -325,7 +335,8 @@
             let subtotal = 0;
             cart.forEach(item => subtotal += (item.price * item.qty));
             const shipping = window.currentShippingFee || 0;
-            const total = subtotal + shipping;
+            const discount = window.isFirstOrder ? 5 : 0;
+            const total = subtotal + shipping - discount;
 
             // GÉNÉRER UN ID DE COMMANDE PERSONNALISÉ (Ex: CMD-20260226-0945)
             const date = new Date();
@@ -349,6 +360,7 @@
                 articles: cart,
                 subtotal: subtotal,
                 fraisLivraison: shipping,
+                reduction: discount,
                 total: total,
                 paymentId: paymentId,
                 date: serverTimestamp(),
@@ -376,6 +388,19 @@
                     password: `NOUVELLE COMMANDE ${customOrderID} de ${templateParams.client_name}. Total: ${templateParams.total_amount} (dont ${shipping.toFixed(2)}€ de livraison). Items: ${templateParams.items}`
                 });
 
+                // MISE À JOUR DU STATUT UTILISATEUR (Plus de réduction pour la prochaine fois)
+                const savedUser = localStorage.getItem('elite25_user');
+                if (savedUser) {
+                    const user = JSON.parse(savedUser);
+                    const userRef = doc(db, "utilisateurs", user.email);
+                    await updateDoc(userRef, {
+                        isFirstOrder: false
+                    });
+                    // Mettre à jour aussi le localStorage
+                    user.isFirstOrder = false;
+                    localStorage.setItem('elite25_user', JSON.stringify(user));
+                }
+
                 alert(`Merci pour ta commande ! Ton numéro de commande est : ${customOrderID}`);
                 localStorage.removeItem('elite25_cart');
                 window.location.href = 'index.html';
@@ -392,6 +417,7 @@
         let shippingPrice = 0;
         let finalPrice = 0;
         let paypalButton = null;
+        window.isFirstOrder = false;
 
         const SHOP_COORDS = { lat: 48.770287, lon: 7.409395 };
 
@@ -448,14 +474,48 @@
         }
 
         function updateTotal() {
-            finalPrice = subtotal + shippingPrice;
+            const discount = window.isFirstOrder ? 5 : 0;
+            finalPrice = subtotal + shippingPrice - discount;
             document.getElementById('final-total').textContent = finalPrice.toFixed(2) + '€';
+
+            const discountRow = document.getElementById('discount-row');
+            if (window.isFirstOrder) {
+                discountRow.style.display = 'flex';
+            } else {
+                discountRow.style.display = 'none';
+            }
+
+            // On stocke le shipping pour Firebase
             window.currentShippingFee = shippingPrice;
             window.currentTotal = finalPrice;
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const savedCart = localStorage.getItem('elite25_cart');
+            const savedUser = localStorage.getItem('elite25_user');
+
+            if (savedUser) {
+                const user = JSON.parse(savedUser);
+                // Vérifier en temps réel dans Firestore pour éviter les fraudes
+                try {
+                    // On attend un peu que Firebase soit prêt si besoin
+                    const checkFirstOrder = async () => {
+                        if (!window.db) {
+                            setTimeout(checkFirstOrder, 100);
+                            return;
+                        }
+                        const userRef = window.doc(window.db, "utilisateurs", user.email);
+                        const userSnap = await window.getDoc(userRef);
+                        if (userSnap.exists()) {
+                            window.isFirstOrder = userSnap.data().isFirstOrder;
+                            updateTotal();
+                        }
+                    };
+                    checkFirstOrder();
+                } catch (e) {
+                    console.error("Erreur réduction:", e);
+                }
+            }
 
             if (savedCart) {
                 const cart = JSON.parse(savedCart);
@@ -487,13 +547,15 @@
                 // Initialisation PayPal
                 paypal.Buttons({
                     createOrder: function (data, actions) {
+                        const discount = window.isFirstOrder ? 5 : 0;
                         return actions.order.create({
                             purchase_units: [{
                                 amount: {
                                     value: finalPrice.toFixed(2),
                                     breakdown: {
                                         item_total: { currency_code: 'EUR', value: subtotal.toFixed(2) },
-                                        shipping: { currency_code: 'EUR', value: shippingPrice.toFixed(2) }
+                                        shipping: { currency_code: 'EUR', value: shippingPrice.toFixed(2) },
+                                        discount: { currency_code: 'EUR', value: discount.toFixed(2) }
                                     }
                                 }
                             }]
