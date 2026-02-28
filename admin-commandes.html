@@ -202,16 +202,10 @@
             const password = document.getElementById('admin-password').value;
             const errorEl = document.getElementById('login-error');
 
-            if (email !== "lucaskick67@gmail.com") {
-                errorEl.textContent = "Accès refusé. Cet email n'est pas autorisé.";
-                errorEl.style.display = "block";
-                return;
-            }
-
             try {
                 await signInWithEmailAndPassword(auth, email, password);
             } catch (error) {
-                errorEl.textContent = "Erreur : " + error.message;
+                errorEl.textContent = "Accès refusé ou erreur d'identifiants.";
                 errorEl.style.display = "block";
             }
         };
@@ -224,6 +218,12 @@
                 document.getElementById('login-section').style.display = 'none';
                 document.getElementById('admin-content').style.display = 'block';
                 startOrdersListener();
+            } else if (user) {
+                // Si connecté avec le mauvais email
+                const errorEl = document.getElementById('login-error');
+                errorEl.textContent = "Accès non autorisé pour ce compte.";
+                errorEl.style.display = "block";
+                signOut(auth);
             } else {
                 document.getElementById('login-section').style.display = 'flex';
                 document.getElementById('admin-content').style.display = 'none';
