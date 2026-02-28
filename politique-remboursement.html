@@ -4,10 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CONTACT | [élite 25]</title>
+    <title>POLITIQUE DE REMBOURSEMENT | [élite 25]</title>
     <link rel="icon" type="image/png" href="assets/images/favicon.png">
     <link rel="stylesheet" href="css/style.css">
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 
 <body>
@@ -31,7 +30,7 @@
             </nav>
 
             <div class="header-icons">
-                <a href="login.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077063.png" alt="Profil"
+                <a href="#"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077063.png" alt="Profil"
                         style="filter: invert(1); width: 22px;"></a>
                 <a href="#" class="cart-trigger" onclick="toggleCart()">
                     <img src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png" alt="Panier"
@@ -43,29 +42,53 @@
     </header>
 
     <main class="content-wrapper">
-        <h1 class="page-title">CONTACT</h1>
+        <h1 class="page-title">POLITIQUE DE REMBOURSEMENT</h1>
 
-        <div class="contact-container">
-            <form id="contact-form" class="contact-form">
-                <div class="form-group">
-                    <label>NOM</label>
-                    <input type="text" id="contact-name" placeholder="Ton nom" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label>E-MAIL</label>
-                    <input type="email" id="contact-email" placeholder="Ton e-mail" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label>NUMÉRO DE TÉLÉPHONE</label>
-                    <input type="tel" id="contact-tel" placeholder="Ton numéro" class="form-input">
-                </div>
-                <div class="form-group">
-                    <label>MESSAGE</label>
-                    <textarea id="contact-msg" placeholder="Ton message" class="form-input" rows="5"
-                        required></textarea>
-                </div>
-                <button type="submit" class="btn-pill btn-primary">ENVOYER</button>
-            </form>
+        <div class="legal-content" style="max-width: 800px; margin: 0 auto; line-height: 1.8; color: #ccc;">
+            <section style="margin-bottom: 40px;">
+                <h2 style="font-family: var(--font-display); color: var(--accent-color); margin-bottom: 20px;">1.
+                    CONDITION DE RETOUR</h2>
+                <p>Pour être admissible à un retour, votre article doit être inutilisé et dans le même état que celui où
+                    vous l'avez reçu. Il doit être également dans l'emballage d'origine avec toutes les étiquettes
+                    attachées.</p>
+                <p>Vous disposez de <strong>14 jours</strong> après réception de votre commande pour effectuer une
+                    demande de retour.</p>
+            </section>
+
+            <section style="margin-bottom: 40px;">
+                <h2 style="font-family: var(--font-display); color: var(--accent-color); margin-bottom: 20px;">2.
+                    ARTICLES NON REMBOURSABLES</h2>
+                <p>Les articles suivants ne peuvent pas être retournés :</p>
+                <ul style="padding-left: 20px; list-style-type: square; margin-top: 10px;">
+                    <li>Articles soldés ou en promotion (avoir possible uniquement)</li>
+                    <li>Produits personnalisés</li>
+                    <li>Articles portés ou lavés</li>
+                </ul>
+            </section>
+
+            <section style="margin-bottom: 40px;">
+                <h2 style="font-family: var(--font-display); color: var(--accent-color); margin-bottom: 20px;">3.
+                    PROCESSUS DE REMBOURSEMENT</h2>
+                <p>Dès reception et inspection de votre colis de retour, nous vous enverrons un e-mail pour confirmer la
+                    réception de l'article retourné.</p>
+                <p>Si votre demande est approuvée, alors votre remboursement sera traité et un crédit sera
+                    automatiquement appliqué à votre carte de crédit ou à votre méthode originale de paiement, dans un
+                    délai de <strong>5 à 10 jours ouvrés</strong>.</p>
+            </section>
+
+            <section style="margin-bottom: 40px;">
+                <h2 style="font-family: var(--font-display); color: var(--accent-color); margin-bottom: 20px;">4. FRAIS
+                    D’EXPÉDITION</h2>
+                <p>Les frais d'expédition pour le retour de votre article sont à votre charge et ne sont pas
+                    remboursables.</p>
+            </section>
+
+            <div
+                style="text-align: center; margin-top: 60px; padding: 30px; border: 1px dashed var(--accent-color); border-radius: 15px;">
+                <p style="font-style: italic; font-size: 0.9em;">Besoin d'aide ? Contactez-nous à
+                    elite.25.securite@gmail.com
+                </p>
+            </div>
         </div>
     </main>
 
@@ -110,46 +133,6 @@
     </footer>
 
     <script src="js/main.js"></script>
-    <script>
-        (function () {
-            emailjs.init("XGL1mU4IcXaVA4S5r");
-        })();
-
-        document.getElementById('contact-form').addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            const btn = this.querySelector('button');
-            btn.textContent = 'ENVOI EN COURS...';
-            btn.disabled = true;
-
-            const name = document.getElementById('contact-name').value;
-            const senderEmail = document.getElementById('contact-email').value;
-            const tel = document.getElementById('contact-tel').value || 'Non renseigné';
-            const msg = document.getElementById('contact-msg').value;
-
-            // Utilisation du nouveau template de contact dédié
-            const templateParams = {
-                name: name,
-                email: senderEmail,
-                message: msg + `\n\n(Tél: ${tel})`,
-                time: new Date().toLocaleString(),
-                title: "DEMANDE CONTACT"
-            };
-
-            emailjs.send("service_l1un9jp", "template_ucbeuac", templateParams)
-                .then(() => {
-                    alert('Message envoyé avec succès ! Nous reviendrons vers toi rapidement.');
-                    this.reset();
-                    btn.textContent = 'ENVOYER';
-                    btn.disabled = false;
-                }, (error) => {
-                    alert('Erreur lors de l\'envoi. Vérifie tes paramètres EmailJS.');
-                    console.error('Erreur EmailJS:', error);
-                    btn.textContent = 'RÉESSAYER';
-                    btn.disabled = false;
-                });
-        });
-    </script>
 </body>
 
 </html>
